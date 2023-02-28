@@ -2,51 +2,84 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
+using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
-
-    public float speed;
+    public GameObject prefabCube;
     private Rigidbody rb;
-    private int count;
-    public GameObject GameOverText;
-    public Text txtCount;
-    public Text txtCena;
-    Scene m_Cena;
-    int[] quantos = { 12, 5, 8 };
-    string[] nome = { "Cena 1", "Cena 2", "Cena 3" };
-
-
-    // Start is called before the first frame update
+    public Text tempo;
+    public float speed;
+    public Text numCubos;
+    public float time;
+    public bool playing;
+    private int cubos;
+    private int numcubos;
     void Start()
     {
+        playing = true;
         rb = GetComponent<Rigidbody>();
-        speed = 20.0f;
-        m_Cena = SceneManager.GetActiveScene();
-        count = quantos[m_Cena.buildIndex];
-        txtCena.text = nome[m_Cena.buildIndex];
-        txtCount.text = count.ToString();
+        tempo = FindObjectOfType<Text>();
+        speed = 25.0f;
+        cubos = 10;
+        GerarCubos(cubos);
     }
-
-    // Update is called once per frame
     void Update()
     {
+        if (playing)
+        {
+            numCubos.text = numcubos.ToString();
+            time -= Time.deltaTime;
+            tempo.text = "Time : " + time.ToString("F2") + "s";
+            if (time <= 0.01)
+            {
+                DeleteAll();
+                playing = false;
+                tempo.text = "Perdeste!!";
+                tempo.color = Color.red;
+            }
 
-        float MoveH = Input.GetAxis("Horizontal");
-        float MoveV = Input.GetAxis("Vertical");
-        Vector3 move = new Vector3(MoveH, 0.0f, MoveV);
-        rb.AddForce(move * speed);
-
-
+        }
     }
+    void DeleteAll()
+    {
+        GameObject[] generatedcubos = GameObject.FindGameObjectsWithTag("cubo");
+        for (int i = 0; i < generatedcubos.Length; i++)
+        {
+            Destroy(generatedcubos[i]);
+        }
+    }
+    void GerarCubos(int quantos)
+    {
+        time = 10.0f;
+        for (int i = 0; i < quantos; i++)
+        {
+            Vector3 randomposition = new Vector3(Random.Range(-8f, 8f), 0.5f, Random.Range(-8f, 8f));
+            Instantiate(prefabCube, randomposition, Quaternion.identity);
+        }
+        numcubos = quantos;
+    }
+    private void FixedUpdate()
+    {
+        float moveHorizontal = Input.GetAxis("Horizontal");
+        float moveVertical = Input.GetAxis("Vertical");
 
+        Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
+        rb.AddForce(movement * speed);
+    }
     private void OnTriggerEnter(Collider other)
     {
-        Destroy(other.gameObject);
-        count--;
-        txtCount.text = count.ToString();
-        if (count == 0) 
-            GameOverText.SetActive(true);
+        if (other.gameObject.tag == "cubo")
+        {
+            //other.gameObject.SetActive(false);
+            Destroy(other.gameObject);
+            numcubos--;
+            time++;
+            print("Cubos em falta : " + numcubos);
+        }
+        if (numcubos == 0)
+        {
+            GerarCubos(++cubos);
+        }
     }
 }
